@@ -28,14 +28,12 @@ bl_info = {
     "name": "Generated Wheel of Fortune",
     "author": "Frikadel_ka",
     "description": "This is an addon that creates and animates a wheel of fortune with many changeable parameters.",
-    "blender": (2, 80, 0),
+    "blender": (4, 3, 0),
     "version": (0, 0, 1),
     "location": "View3D > Sidebar > Wheel Tool",
     "warning": "",
-
-    "doc_url": "https://github.com/username/my-blender-addon#readme",
-    "tracker_url": "https://github.com/username/my-blender-addon/issues",
-
+    "doc_url": "https://github.com/frikadel-ka/wheel-of-fortune-addon#readme",
+    "tracker_url": "https://github.com/frikadel-ka/wheel-of-fortune-addon/issues",
     "category": "Generic",
 }
 

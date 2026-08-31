@@ -1,0 +1,46 @@
+name: Package and Release Blender Addon
+
+on:
+  push:
+    tags:
+      - 'v*' # Срабатывает на теги v1.0.0, v0.2.1-beta и т.д.
+
+permissions:
+  contents: write # Разрешение на создание релизов и загрузку assets
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Извлекаем чистую версию из тега (например, "v1.0.0" -> "1.0.0")
+      - name: Extract version tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      # Создаём ZIP-архив.
+      # Укажите имя вашей папки с кодом аддона вместо "my_addon_folder"
+      - name: Create Addon ZIP Archive
+        run: |
+          ADDON_NAME="my_addon_folder"
+          ZIP_NAME="${ADDON_NAME}-v${{ env.VERSION }}.zip"
+          
+          # Упаковываем папку аддона, исключая служебные файлы Python
+          zip -r "$ZIP_NAME" "$ADDON_NAME" -x "*.pyc" "*/__pycache__/*" "*.DS_Store"
+          
+          echo "ZIP_PATH=$ZIP_NAME" >> $GITHUB_ENV
+
+      # Публикуем Release в GitHub
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_PATH }}
+          name: Release v${{ env.VERSION }}
+          generate_release_notes: true # Автоматически формирует список коммитов
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
