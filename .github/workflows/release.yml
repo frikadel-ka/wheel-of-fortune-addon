@@ -3,10 +3,10 @@ name: Build and Release Blender Extension
 on:
   push:
     tags:
-      - 'v*' # Срабатывает при отправке тега, например v1.0.0
+      - 'v*'
 
 permissions:
-  contents: write # Разрешение на загрузку файлов в GitHub Releases
+  contents: write
 
 jobs:
   build-and-release:
@@ -24,8 +24,8 @@ jobs:
         run: |
           ZIP_NAME="wheel_of_fortune-v${{ env.VERSION }}.zip"
           
-          # Упаковываем файлы прямо в корень архива (без вложенных папок)
-          zip -r "$ZIP_NAME" __init__.py operators.py properties.py translations.py ui.py utils.py blender_manifest.toml -x "*.pyc" "*/__pycache__/*" "*.DS_Store"
+          # Упаковываем всё содержимое репозитория, исключая мусор и системные файлы
+          zip -r "$ZIP_NAME" . -x "*.git*" "*.github*" "*__pycache__*" "*.DS_Store"
           
           echo "ZIP_PATH=$ZIP_NAME" >> $GITHUB_ENV
 
