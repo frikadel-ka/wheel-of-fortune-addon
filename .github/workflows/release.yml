@@ -3,10 +3,10 @@ name: Package and Release Blender Addon
 on:
   push:
     tags:
-      - 'v*' # Срабатывает на теги v1.0.0, v0.2.1-beta и т.д.
+      - 'v*' # Срабатывает при отправке тегов вида v1.0.0, v0.1.0 и т.д.
 
 permissions:
-  contents: write # Разрешение на создание релизов и загрузку assets
+  contents: write # Права на создание релизов на GitHub
 
 jobs:
   build-and-release:
@@ -16,30 +16,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Извлекаем чистую версию из тега (например, "v1.0.0" -> "1.0.0")
+      # 1. Извлекаем чистую версию из тега (например, "v1.0.0" -> "1.0.0")
       - name: Extract version tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      # Создаём ZIP-архив.
-      # Укажите имя вашей папки с кодом аддона вместо "my_addon_folder"
+      # 2. Собираем структуру аддона и упаковываем в ZIP
       - name: Create Addon ZIP Archive
         run: |
-          ADDON_NAME="my_addon_folder"
-          ZIP_NAME="${ADDON_NAME}-v${{ env.VERSION }}.zip"
+          ADDON_DIR="wheel_of_fortune"
+          ZIP_NAME="${ADDON_DIR}-v${{ env.VERSION }}.zip"
           
-          # Упаковываем папку аддона, исключая служебные файлы Python
-          zip -r "$ZIP_NAME" "$ADDON_NAME" -x "*.pyc" "*/__pycache__/*" "*.DS_Store"
+          # Создаем временную директорию для правильной структуры аддона
+          mkdir -p "$ADDON_DIR"
+          
+          # Копируем Python-файлы аддона и манифест (если используется в Blender 4.2+)
+          cp __init__.py operators.py properties.py translations.py ui.py utils.py "$ADDON_DIR/" 2>/dev/null || true
+          [ -f blender_manifest.toml ] && cp blender_manifest.toml "$ADDON_DIR/" || true
+          
+          # Упаковываем созданную папку в ZIP-архив, исключая __pycache__
+          zip -r "$ZIP_NAME" "$ADDON_DIR" -x "*.pyc" "*/__pycache__/*" "*.DS_Store"
           
           echo "ZIP_PATH=$ZIP_NAME" >> $GITHUB_ENV
 
-      # Публикуем Release в GitHub
+      # 3. Публикуем Release в GitHub
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.ZIP_PATH }}
           name: Release v${{ env.VERSION }}
-          generate_release_notes: true # Автоматически формирует список коммитов
+          generate_release_notes: true
           draft: false
           prerelease: false
         env:
