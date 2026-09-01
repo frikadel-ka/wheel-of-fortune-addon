@@ -41,7 +41,7 @@ bl_info = {
 from .wheel_of_fortune import ui
 from .wheel_of_fortune.translations import translations_dict
 from bpy.props import StringProperty, FloatProperty, CollectionProperty, IntProperty, PointerProperty, EnumProperty, BoolProperty # type: ignore
-import bpy
+import bpy #type: ignore
 
 from .wheel_of_fortune import operators, properties
 # import mathutils

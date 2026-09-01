@@ -3,8 +3,8 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "wheel_fortune"
-version = "1.0.0"
-name = "Wheel_fortune"
+version = "0.0.1"
+name = "Wheel of Fortune"
 tagline = "This is another extension"
 maintainer = "Frikadel_ka"
 # Supported types: "add-on", "theme"
