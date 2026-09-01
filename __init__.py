@@ -37,14 +37,27 @@ bl_info = {
     "category": "Generic",
 }
 
-
-from .wheel_of_fortune import ui
-from .wheel_of_fortune.translations import translations_dict
 from bpy.props import StringProperty, FloatProperty, CollectionProperty, IntProperty, PointerProperty, EnumProperty, BoolProperty # type: ignore
-import bpy #type: ignore
 
-from .wheel_of_fortune import operators, properties
-# import mathutils
+
+
+if "bpy" in locals():
+    import importlib
+    # Вписываем сюда все ваши файлы, кроме init.py
+    translations=importlib.reload(translations)
+    properties=importlib.reload(properties)
+    operators=importlib.reload(operators)
+    ui=importlib.reload(ui)
+    print("--- Аддон обновлен ---")
+else:
+    from .wheel_of_fortune import translations
+    from .wheel_of_fortune import properties
+    from .wheel_of_fortune import operators
+    from .wheel_of_fortune import ui
+
+import bpy #type: ignore
+translations_dict = translations.translations_dict
+
 classes = (
     *properties.classes,
     *operators.classes,
