@@ -13,12 +13,9 @@ class WHEEL_UL_sectors(bpy.types.UIList):
             spl.prop(item, "sector_name", text="")
             spl.prop(item, "sector_weight", text="Weight")
 
-
-# ==========================================
-# 3. ПАНЕЛЬ В ИНТЕРФЕЙСЕ (N-панель)
-# ==========================================
 # --- ГЛАВНАЯ ПАНЕЛЬ ---
 class VIEW3D_PT_wheel_main_panel(bpy.types.Panel):
+    """Кнопки запекания геометрии и анимции"""
     bl_idname = "VIEW3D_PT_wheel_main_panel" # Уникальный ID для привязки саб-панелей
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -36,6 +33,7 @@ class VIEW3D_PT_wheel_main_panel(bpy.types.Panel):
         layout.operator("wheel.make_animation", icon='ACTION', text=text_make_animation)
 
 class VIEW3D_PT_wheel_properties_subpanel(bpy.types.Panel):
+    """Параметры генерации и анимции"""
     bl_idname = "VIEW3D_PT_wheel_properties_subpanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -97,8 +95,14 @@ class VIEW3D_PT_wheel_properties_subpanel(bpy.types.Panel):
 
         box = layout.box()
         box.label(text="Animation", icon='ACTION')
+        box.prop(cfg, "start_frame")
         box.prop(cfg, "loop_seconds")
         box.prop(cfg, "fps")
+        box.prop(cfg, "num_of_revol")
+        box.prop(cfg, "rand_or_predet")
+        box.prop(cfg, "resulting_sector")
+        box.prop(cfg, "resulting_angle")
+        box.prop(cfg, "accident_diff_angle")
 
         box = layout.box()
         box.label(text="Arrow physics", icon='PHYSICS')
@@ -108,14 +112,15 @@ class VIEW3D_PT_wheel_properties_subpanel(bpy.types.Panel):
         box.prop(cfg, "substep_calculation")
 # --- САБ-ПАНЕЛЬ СЕКТОРОВ (СЛОВАРЯ) ---
 class VIEW3D_PT_wheel_sectors_subpanel(bpy.types.Panel):
+    """Панель элементов словаря"""
     bl_idname = "VIEW3D_PT_wheel_sectors_subpanel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Wheel Tool'
     
-    bl_parent_id = "VIEW3D_PT_wheel_main_panel" # <-- МАГИЯ ЗДЕСЬ. Ссылка на главную панель
+    bl_parent_id = "VIEW3D_PT_wheel_main_panel" # Ссылка на главную панель
     bl_label = "Sectors (Dictionary)"
-    # bl_options = {'DEFAULT_CLOSED'} # Раскомментируйте, если хотите чтобы панель была свернута по умолчанию
+    # bl_options = {'DEFAULT_CLOSED'} # Раскомментировать, чтобы панель была свернута по умолчанию если надо
 
     def draw(self, context):
         layout = self.layout

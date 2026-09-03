@@ -77,7 +77,6 @@ def animate_shape(obj, start_frame, end_frame):
     
     obj.keyframe_insert("rotation_euler", frame = end_frame)
     
-    # Вызываем измененную функцию — она настроит созданные ключи
     wheel = bpy.data.objects.get("Wheel_Fortune_3D_Root")
     if wheel:
         set_keyframe_to_ease_in_out(wheel)
@@ -99,7 +98,6 @@ def calculate_pins_from_dict(data_dict):
     return pin_angles
 
 def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, rollback_frames):
-    # 1. Получаем список локальных углов штифтов
     local_pins = calculate_pins_from_dict(data_dict)
     
     hit_zone, exit_zone, max_deflection = angeles_extremum(cfg)
@@ -113,7 +111,7 @@ def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, r
     sub_dt = dt / substeps
     
     
-    # Физические параметры стрелки (живут вне циклов и сохраняют состояние)
+    # Физические параметры стрелки
     deflection = 0.0
     ang_V = 0.0
     prev_deflection = 0.0
@@ -124,28 +122,23 @@ def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, r
     if arrow_obj.animation_data and arrow_obj.animation_data.action:
         arrow_obj.animation_data_clear()
 
-    # Берем положение колеса на "нулевом" кадра для плавного старта интерполяции
+    # Берем положение колеса на "нулевом" кадре для плавного старта интерполяции
     context.scene.frame_set(0)
     prev_wheel_rot = wheel_obj.rotation_euler[2]
 
     calc_deflection = get_deflection_calculator(cfg)
 
-    # Погнали по кадрам
     for frame in range(0, total_frames + 1):
-        # Переставляем таймлайн Блендера на текущий кадр
         context.scene.frame_set(frame)
         current_wheel_rot = wheel_obj.rotation_euler[2]
         
-        # ВНУТРЕННИЙ ЦИКЛ СУБСТЕППИНГА
         for step in range(1, substeps + 1):
-            # 1. Плавно двигаем колесо внутри кадра (линейная интерполяция)
             factor = step / substeps
             sub_wheel_rot = prev_wheel_rot + (current_wheel_rot - prev_wheel_rot) * factor
             
             any_collision = False
             max_kinematic_deflection = 0.0
             
-            # 2. Проверяем ВСЕ штифты на этом микро-шаге
             for pin_local_angle in local_pins:
                 global_pin_angle = (pin_local_angle + sub_wheel_rot - cfg.arrow_angle) % (2 * math.pi)
                 
@@ -162,12 +155,11 @@ def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, r
                     if pin_deflection > max_kinematic_deflection:
                         max_kinematic_deflection = pin_deflection
             
-            # 3. Считаем физику для текущего микро-шага (sub_dt)
+            # Считаем физику для текущего микро-шага (sub_dt)
             if any_collision or frame > total_frames-rollback_frames:
                 # Фаза контакта: стрелка послушно следует за геометрией штифта
                 deflection = max_kinematic_deflection
-                # Вычисляем скорость честно: изменение координаты делить на микро-время
-                # Благодаря этому при сходе со штифта стрелка сохранит скорость колеса!
+                # Вычисляем скорость: изменение координаты делить на микро-время
                 delta_deflection = deflection - prev_deflection
                 if abs(delta_deflection) < 0.0001:
                     ang_V = 0
@@ -182,7 +174,7 @@ def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, r
             # Сохраняем значение для следующего микро-шага
             prev_deflection = deflection
             
-        # Конец субстеппинга. Запоминаем позицию колеса для следующего кадра
+        # Запоминаем позицию колеса для следующего кадра
         prev_wheel_rot = current_wheel_rot
         
         # Записываем ключ для стрелки (значение, которое накопилось к концу кадра)
@@ -193,7 +185,7 @@ def animate_arrow(context, cfg, wheel_obj, arrow_obj, data_dict, total_frames, r
     return normalized_angle
 
 def angeles_extremum(cfg):
-    radius = cfg.pin_radius # радиус палки
+    radius = cfg.pin_radius # Радиус палки
     wheel_radius = cfg.wheel_radius  # Радиус колеса
     c = cfg.arrow_p_of_r # Расстояние от точки кручения до вершины треугольника
     l = c - cfg.dist_between_edge_tip # Растояние от колеса до т. вращения стрелки
@@ -203,10 +195,10 @@ def angeles_extremum(cfg):
     e = wheel_radius + l - c # Расстояние от центра колеса до вершины при нулевом угле
     L = wheel_radius + radius
     M = c + radius
-    N = wheel_radius + l #wheel_radius + l # расстояние от центра колеса до т. вр. стрелки
+    N = wheel_radius + l # Расстояние от центра колеса до т. вр. стрелки
     p = (L + M + N) /2
     h = 2/N * math.sqrt(p*(p-L)*(p-M)*(p-N)) # Высота треугольника LMN на сторону N
-    beta = math.asin(h/(wheel_radius+radius)) # максимальный угол колеса
+    beta = math.asin(h/(wheel_radius+radius)) # Максимальный угол колеса
     alpha = math.asin(b/(2*a)) + math.asin((2*a*radius-b*e)/(2*a*wheel_radius))
     gamma = math.asin(h/(c+radius))
     
@@ -228,7 +220,6 @@ def get_deflection_calculator(cfg):
     theta = math.asin(half_base / a)
     t = (height * base) / a
     
-    # Эта функция помнит верхние переменные и работает молниеносно
     def calculate(psi):
         l = math.sqrt(R**2 + D**2 - 2 * R * D * math.cos(psi))
         
@@ -274,7 +265,7 @@ def calculate_rollback_target(cfg, final_wheel_rot, local_pins, hit_zone, exit_z
                 max_deflection = max(max_deflection, calc_deflection(norm_angle))
                 
         if max_deflection <= 0.001:
-            break  # Стрелка полностью выпрямилась!
+            break  # Стрелка полностью выпрямилась
             
         current_rot -= step  # Откатываем колесо назад
         
@@ -284,8 +275,7 @@ def calculate_rollback_target(cfg, final_wheel_rot, local_pins, hit_zone, exit_z
             
     return current_rot, True
 
-def make_animation(data, cfg): #(sectors_dict, )
-    # Выделит эту функцию ошибку в отдельную 
+def make_animation(data, cfg):
     wheel_root = bpy.data.objects.get("Wheel_Fortune_3D_Root")
     if wheel_root is None:
 
@@ -302,16 +292,15 @@ def make_animation(data, cfg): #(sectors_dict, )
         def draw_error_message(self, context):
             self.layout.label(text="Ошибка: Объект 'Wheel_Arrow' не найден!", icon='ERROR')
             self.layout.label(text="Пожалуйста, добавьте или переименуйте объект в сцене.")
-        # Вызов всплывающего окна
         bpy.context.window_manager.popup_menu(draw_error_message, title="Объект отсутствует", icon='CANCEL')
         return
 
-    main_frames = 360  # Длительность основного вращения
+    main_frames = int(cfg.loop_seconds*cfg.fps)  # Длительность основного вращения
     
-    # 1. Запускаем основное вращение колеса
+    # Запускаем основное вращение колеса
     animate_shape(wheel_root, 0, main_frames)
     
-    # 2. Подготовка данных для расчета отката
+    # Подготовка данных для расчета отката
     local_pins = calculate_pins_from_dict(data) # data = sectors_dict
     hit_zone, exit_zone, _ = angeles_extremum(cfg)
     
@@ -319,7 +308,7 @@ def make_animation(data, cfg): #(sectors_dict, )
     bpy.context.scene.frame_set(main_frames)
     final_rot = wheel_root.rotation_euler[2]
     
-    # 3. Вычисляем угол отката
+    # Вычисляем угол отката
     rollback_rot, needs_rollback = calculate_rollback_target(cfg, final_rot, local_pins, hit_zone, exit_zone)
     
     total_anim_frames = main_frames
@@ -333,38 +322,31 @@ def make_animation(data, cfg): #(sectors_dict, )
         wheel_root.rotation_euler[2] = rollback_rot
         wheel_root.keyframe_insert("rotation_euler", frame=total_anim_frames, index=2)
         
-        # --- ИСПРАВЛЕННЫЙ БЛОК ДЛЯ BLENDER 5.2+ ---
         action = wheel_root.animation_data.action
         
-        # Адаптация под новую анимационную систему (Project Baklava / Slotted Actions)
         if hasattr(action, "slots"):
-            # 1. Получаем активный слот объекта (или берем первый по умолчанию)
+            # Получаем активный слот объекта (или берем первый по умолчанию)
             slot = getattr(wheel_root.animation_data, "action_slot", action.slots[0])
             if not slot:
                 slot = action.slots[0]
                 
-            # 2. Идем по новой иерархии: слой -> стрип -> channelbag -> fcurves
             layer = action.layers[0]
             strip = layer.strips[0]
             channelbag = strip.channelbag(slot, ensure=True)
             fcurves_data = channelbag.fcurves
         else:
-            # Классический доступ (для Blender 4.3 и ниже)
             fcurves_data = action.fcurves
             
-        # Ищем кривую вращения по оси Z (index=2)
         fcurve = fcurves_data.find('rotation_euler', index=2)
         
         if fcurve:
-            # Находим предпоследний ключ (конец основного вращения) и делаем из него линейный выход
             kf_main_end = fcurve.keyframe_points[-2]
             kf_main_end.interpolation = 'LINEAR'
         # -----------------------------------------
     
-    # 4. Запускаем физику стрелки на ВСЕ кадры (включая кадры отката)
+    # Запускаем физику стрелки на ВСЕ кадры (включая кадры отката)
     animate_arrow(bpy.context, cfg, wheel_root, arrow, data, total_anim_frames, rollback_frames if needs_rollback else 0)
 
-# добавить функцию точки поворота стрелки которую можно поставить хоть куда
 def create_arrow_object(context, cfg, wheel_radius, wheel_thickness, matarrow, wheel_root, arrow_angle):
 
     # Проверяем, существует ли уже стрелка в сцене
@@ -410,7 +392,7 @@ def create_arrow_object(context, cfg, wheel_radius, wheel_thickness, matarrow, w
 
     bmesh.ops.translate(bm, vec=(-arrow_p_of_r, 0, 0), verts=bm.verts)
 
-    bm.to_mesh(arrow_mesh)  # Исправлено с mesh на arrow_mesh
+    bm.to_mesh(arrow_mesh)
     bm.free()
     
     arrow_obj.data.materials.append(matarrow)
@@ -426,7 +408,7 @@ def create_arrow_object(context, cfg, wheel_radius, wheel_thickness, matarrow, w
     arrow_obj.rotation_euler = (0, 0, arrow_angle)
     arrow_obj.scale = (1.0, 1.0, 1.0)
 
-    # 3. Настройка Copy Location (с проверкой на дубликаты)
+    # Настройка Copy Location (с проверкой на дубликаты)
     loc_constraint = arrow_obj.constraints.get("Copy_Wheel_Location")
     if not loc_constraint:
         loc_constraint = arrow_obj.constraints.new(type='COPY_LOCATION')
@@ -440,12 +422,12 @@ def create_arrow_object(context, cfg, wheel_radius, wheel_thickness, matarrow, w
 def use_mat(mat_name, base_color):
     mat_obj = bpy.data.materials.get(mat_name)
     if mat_obj is None:
-        mat_obj = bpy.data.materials.new(name=mat_name) # f"MAT_ARROW"
+        mat_obj = bpy.data.materials.new(name=mat_name)
         mat_obj.use_nodes = True
         nodearrow = mat_obj.node_tree.nodes
         principled = nodearrow.get("Principled BSDF")
         if principled:
-            principled.inputs['Base Color'].default_value = base_color #(1,0,0,1)
+            principled.inputs['Base Color'].default_value = base_color
             principled.inputs['Roughness'].default_value = 0.2
     return mat_obj
 
@@ -485,21 +467,21 @@ def fit_text_scales(context, text_objects, wheel_radius):
 def create_pins(x, y, angle, parent_obj, pin_radius, pin_height):
     bpy.ops.mesh.primitive_cylinder_add(
         radius=pin_radius,
-        depth=pin_height,                     # длина перекладины (при необходимости измените)
+        depth=pin_height, # длина перекладины (при необходимости измените)
         location=(x, y, pin_height/2)
     )
     bar = bpy.context.object
-    bar.rotation_euler = (0, 0, angle)   # поворот вокруг Y на 90°, затем вокруг Z на угол
+    bar.rotation_euler = (0, 0, angle) # поворот вокруг Y на 90°, затем вокруг Z на угол
     bar.parent = parent_obj
 
 def create_spoke(x, y, angle, wheel_thickness, parent_obj, wheel_radius, spoke_width):
     bpy.ops.mesh.primitive_cylinder_add(
         radius=spoke_width/2,
-        depth=wheel_radius,                     # длина перекладины (при необходимости измените)
+        depth=wheel_radius, # длина перекладины (при необходимости измените)
         location=(x/2, y/2, wheel_thickness)
     )
     bar = bpy.context.object
-    bar.rotation_euler = (0, 1.5708, angle)   # поворот вокруг Y на 90°, затем вокруг Z на угол
+    bar.rotation_euler = (0, 1.5708, angle) # поворот вокруг Y на 90°, затем вокруг Z на угол
     bar.parent = parent_obj
 
 def create_wheel(context, sectors_dict, cfg):
@@ -532,7 +514,7 @@ def create_wheel(context, sectors_dict, cfg):
     arrow_angle = cfg.arrow_angle # Угол стрелки
     pin_radius = cfg.pin_radius # Радиус пина
     pin_height = cfg.pin_height # Высота пина
-    spoke_width = cfg.spoke_width
+    spoke_width = cfg.spoke_width # Толщина спицы
     wheel_thickness = cfg.wheel_thickness # Толщина колеса
     text_thickness = cfg.text_thickness # Толщина текста
 
@@ -544,7 +526,7 @@ def create_wheel(context, sectors_dict, cfg):
     
     # Центр
     sph_is_none = bpy.data.objects.get("Center_Sphere") is None
-    if sph_is_none: # ЭТОТ ПОНОС ПЕРЕДЕЛАТЬ НА НОРМАЛЬНЫЙ А НЕ ИПУЧИЙ ШАР
+    if sph_is_none: # ПЕРЕДЕЛАТЬ НА BMESH
         # Создаем структуру меша и объект напрямую
         sphere_mesh = bpy.data.meshes.new("Center_Sphere_Mesh")
         sphere_obj = bpy.data.objects.new("Center_Sphere", sphere_mesh)
@@ -558,17 +540,11 @@ def create_wheel(context, sectors_dict, cfg):
         bm.to_mesh(sphere_mesh)
         bm.free() 
 
-    # Срелка Cylinder
-    
-    # ПЕРЕДЕЛАТЬ СТРЕЛКУ (ГЕОМЕТРИЮ) И РАСЧЕТ ДЛЯ НЕЕ 
-    #arrow=bpy.context.active_object # переделать в def active_object(): МБ НЕ ФАКТ
-
     matarrow = use_mat("MAT_ARROW", (1,0,0,1))
     create_arrow_object(context, cfg, wheel_radius, wheel_thickness, matarrow, wheel_root, arrow_angle)
 
     mattext = use_mat("TEXT", (0,0,0,0))
 
-    # ДОБАВИТЬ ПОЯСНЕНИЙ А ТАК ВРОДЕ НОРМ
     for label, weight in sectors_dict.items():
         sector_angle = (weight / total_weight) * 2 * math.pi
         num_arc_points = max(3, int(math.degrees(sector_angle) * segments_per_degree)) # Расчет кол-ва т. дуги
@@ -598,16 +574,16 @@ def create_wheel(context, sectors_dict, cfg):
         # --- ДЕЛАЕМ СЕКТОР ОБЪЕМНЫМ ---
         solidify = sector_obj.modifiers.new(name="Solidify", type='SOLIDIFY')
         solidify.thickness = wheel_thickness
-        solidify.offset = 1.0  # Выдавливаем вверх, а не вниз
+        solidify.offset = 1.0
 
         random_color = get_random_color()
-        mat = use_mat(f"Mat_{label}", random_color) # сделать выбор в ui но пока норм
+        mat = use_mat(f"Mat_{label}", random_color)
         sector_obj.data.materials.append(mat)
 
 
 
         mid_angle = current_angle + sector_angle / 2
-        # Создаем 3D-текст
+
         text_obj = create_sector_text(context, cfg, label, wheel_radius, text_thickness, wheel_thickness, mid_angle, wheel_root, mattext)
 
         created_texts.append(text_obj)

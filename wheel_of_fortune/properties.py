@@ -47,7 +47,7 @@ class WheelSettingsProperties(PropertyGroup):
         min=0,
         soft_max=5,
     )
-    # -Радианы(spoke)-
+    # -Спицы(spoke)-
     spoke_width: FloatProperty(
         name="Spoke Width",
         default=0.1,
@@ -127,6 +127,12 @@ class WheelSettingsProperties(PropertyGroup):
         soft_max=5
     )
     # -Анимация-
+    start_frame: IntProperty(
+        name="Start Frame",
+        default=0,
+        soft_min=0,
+        soft_max=360
+    )
     loop_seconds: FloatProperty(
         name="Loop Seconds",
         default=8,
@@ -138,6 +144,31 @@ class WheelSettingsProperties(PropertyGroup):
         default=60,
         soft_min=12,
         soft_max=360,
+    )
+    num_of_revol: IntProperty(
+        name="Number of Revolutions",
+        default=10,
+        min=0,
+        soft_max=15
+    )
+    rand_or_predet: BoolProperty(
+        name="Use Predetermined",
+        default=False
+    )
+    resulting_sector: StringProperty( # Посмотреть как реализовать список секторов
+        name="Resulting Sector"
+    )
+    resulting_angle: FloatProperty(
+        name="Resulting Angle", # Зависит от resulting_setor и наоборот в зависимости что последнее изменилось
+        default=0.0,
+        min=0.0,
+        max=360.0
+    )
+    accident_diff_angle: FloatProperty(
+        name="Angle with Accident difference",
+        default=0.0,
+        min=0.0,
+        max=360.0 # Добавить предохранитель чтобы стрелка не вылетала за пределы сектора
     )
     # -Физика_стрелки-
     moment_of_inertia: FloatProperty( # PHYS_I

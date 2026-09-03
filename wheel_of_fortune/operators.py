@@ -3,17 +3,17 @@ from .utils import create_wheel, make_animation
 
 class MESH_OT_reset_wheel_settings(bpy.types.Operator):
     """Сбросить параметры геометрии к значениям по умолчанию"""
-    bl_idname = "wheel.reset_settings"  # Идентификатор оператора
+    bl_idname = "wheel.reset_settings"  
     bl_label = "Reset settings"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        # Вызываем созданный метод прямо у настроек сцены
+        # Вызываем созданный метод у настроек сцены
         context.scene.my_wheel_settings.set_default_properties()
         return {'FINISHED'}
 
 class MESH_OT_make_animation(bpy.types.Operator):
-    """Создать анимвцию колеса"""
+    """Создать анимацию колеса"""
     bl_idname = "wheel.make_animation"
     bl_label = "Make animation"
     bl_options = {'REGISTER', 'UNDO'}
@@ -21,7 +21,7 @@ class MESH_OT_make_animation(bpy.types.Operator):
     def execute(self, context):
         cfg = context.scene.my_wheel_settings
         
-                # Собираем Python-словарь из коллекции
+        # Собираем словарь из коллекции
         sectors_dict = {
             item.sector_name: item.sector_weight 
             for item in context.scene.my_wheel_variants
@@ -31,9 +31,6 @@ class MESH_OT_make_animation(bpy.types.Operator):
 
         return {'FINISHED'}
 
-# ==========================================
-# 2. ОПЕРАТОР (Кнопка действия)
-# ==========================================
 class MESH_OT_create_wheel(bpy.types.Operator):
     """Создать колесо"""
     bl_idname = "mesh.create_wheel"
